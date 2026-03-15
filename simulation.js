@@ -262,14 +262,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetUI() {
         clearTable();
         renderDashboard({ landings: 0, takeoffs: 0, averageQueue: '0.00' });
-        analysisContent.innerHTML = 'Ejecutá una simulación para ver el análisis automático.';
+        analysisContent.innerHTML = `
+            <div class="analysis-report">
+                <div class="analysis-block">
+                    <h3>Análisis listo para generar</h3>
+                    <p>Iniciá una simulación y al finalizar vas a ver un reporte con métricas clave, diagnóstico y mejoras recomendadas.</p>
+                </div>
+            </div>
+        `;
         setStatus('Lista para iniciar', 'ready');
         pauseButton.disabled = true;
         pauseButton.textContent = 'Pausar';
     }
 
     function renderRunningAnalysis() {
-        analysisContent.innerHTML = '<p>La simulación está en curso. El análisis aparecerá automáticamente al finalizar.</p>';
+        analysisContent.innerHTML = `
+            <div class="analysis-report">
+                <div class="analysis-block">
+                    <h3>Simulación en curso</h3>
+                    <p>Estamos recolectando eventos para calcular indicadores de carga, estabilidad y rendimiento operativo.</p>
+                </div>
+            </div>
+        `;
     }
 
     function buildResultAnalysis(results, config) {
@@ -279,43 +293,116 @@ document.addEventListener('DOMContentLoaded', () => {
         const throughput = (results.landings + results.takeoffs) / Math.max(results.clock, 1);
         const averageQueue = Number(results.averageQueue);
         const pendingQueue = results.queueLanding + results.queueTakeoff;
+        const pressurePercent = trafficIntensity * 100;
+        const throughputUsePercent = (throughput / Math.max(mu, 0.0001)) * 100;
+
+        let levelLabel = 'Estable';
+        let levelClass = 'analysis-badge--ok';
+        if (trafficIntensity >= 1 || averageQueue >= 2 || pendingQueue >= 6) {
+            levelLabel = 'Crítico';
+            levelClass = 'analysis-badge--critical';
+        } else if (trafficIntensity >= 0.8 || averageQueue >= 1.2 || pendingQueue >= 3) {
+            levelLabel = 'En tensión';
+            levelClass = 'analysis-badge--warn';
+        }
 
         let diagnosis = '';
         if (trafficIntensity >= 1) {
-            diagnosis = 'El sistema quedó exigido: están entrando aviones al mismo ritmo o más rápido de lo que la pista puede atender.';
+            diagnosis = 'El sistema está pasado de carga: entran aviones al mismo ritmo o más rápido de lo que la pista puede absorber.';
         } else if (averageQueue >= 1.5) {
-            diagnosis = 'La capacidad alcanza en promedio, pero la cola sigue alta por acumulaciones en ciertos momentos.';
+            diagnosis = 'La capacidad promedio alcanza, pero tenés picos de congestión que generan acumulaciones y demoras visibles.';
         } else {
-            diagnosis = 'El comportamiento fue estable: la pista logró sostener la operación con colas relativamente controladas.';
+            diagnosis = 'La operación se mantuvo estable: la pista sostuvo la demanda y las colas quedaron controladas.';
         }
 
         let nonViablePoint = '';
         if (trafficIntensity >= 1) {
-            nonViablePoint = 'Con estos parámetros no es viable mantener una operación fluida: la tasa de llegada total es igual o mayor que la capacidad de pista, así que la cola tiende a crecer.';
+            nonViablePoint = 'Con estos parámetros no es viable sostener fluidez: la tasa de llegada total es igual o mayor que la capacidad de pista, por lo que la cola tiende a crecer sin techo.';
         } else {
-            nonViablePoint = 'Aunque la capacidad promedio parece suficiente, no es viable esperar demoras cero con estos parámetros: llegan aterrizajes y despegues al mismo instante y la prioridad de aterrizaje desplaza despegues.';
+            nonViablePoint = 'Aunque el promedio da bien, no es viable aspirar a demoras cero: aterrizajes y despegues coinciden y la prioridad de aterrizaje desplaza la salida de despegues.';
         }
 
-        let improvement = '';
+        const improvements = [];
         if (trafficIntensity >= 1) {
             const suggestedArrival = Math.ceil(2 * config.runwayUseTime + 1);
-            improvement = `Mejora sugerida: aumentá el intervalo de llegada al menos a ${suggestedArrival} min o reducí el uso de pista por maniobra para bajar la presión sobre la cola.`;
+            improvements.push(`Aumentá el intervalo de llegada a ${suggestedArrival} min o más para bajar la presión de entrada.`);
+            improvements.push('Reducí el tiempo de uso de pista por maniobra con mejoras operativas o procedimientos más ágiles.');
         } else {
-            improvement = 'Mejora sugerida: separá el intervalo de llegadas de aterrizajes y despegues para evitar picos simultáneos y reducir esperas puntuales.';
+            improvements.push('Desfasá el patrón de aterrizajes y despegues para evitar picos simultáneos.');
+            improvements.push('Revisá una regla de prioridad dinámica cuando la cola de despegue supere un umbral.');
+        }
+
+        if (pendingQueue > 0) {
+            improvements.push(`Quedaron ${pendingQueue} aviones en cola al cierre: considerá extender ventana de simulación para evaluar vaciado de backlog.`);
+        } else {
+            improvements.push('La cola final quedó en cero: el esquema actual es razonable para esta carga de trabajo.');
         }
 
         return `
-            <p><strong>Diagnóstico:</strong> ${diagnosis}</p>
-            <p><strong>Fundamento numérico:</strong> Llegadas promedio = ${lambda.toFixed(2)} aviones/min, capacidad de pista = ${mu.toFixed(2)} aviones/min, intensidad de tráfico = ${trafficIntensity.toFixed(2)}. Además, el throughput observado fue ${throughput.toFixed(2)} aviones/min y la cola promedio ${averageQueue.toFixed(2)}.</p>
-            <p><strong>Punto no viable con estos parámetros:</strong> ${nonViablePoint}</p>
-            <p><strong>Mejora concreta:</strong> ${improvement}</p>
-            <p><strong>Cierre:</strong> Terminaste en T=${results.clock} con ${results.landings} aterrizajes, ${results.takeoffs} despegues y ${pendingQueue} aviones pendientes en cola.</p>
+            <div class="analysis-report">
+                <div class="analysis-kpi-grid">
+                    <article class="analysis-kpi">
+                        <div class="analysis-kpi-label">Intensidad de tráfico (λ/μ)</div>
+                        <div class="analysis-kpi-value">${trafficIntensity.toFixed(2)}</div>
+                        <span class="analysis-badge ${levelClass}">${levelLabel}</span>
+                    </article>
+                    <article class="analysis-kpi">
+                        <div class="analysis-kpi-label">Presión de pista</div>
+                        <div class="analysis-kpi-value">${pressurePercent.toFixed(0)}%</div>
+                        <span class="analysis-badge ${levelClass}">Carga operativa</span>
+                    </article>
+                    <article class="analysis-kpi">
+                        <div class="analysis-kpi-label">Throughput observado</div>
+                        <div class="analysis-kpi-value">${throughput.toFixed(2)}</div>
+                        <span class="analysis-badge analysis-badge--ok">${throughputUsePercent.toFixed(0)}% de uso</span>
+                    </article>
+                    <article class="analysis-kpi">
+                        <div class="analysis-kpi-label">Cola promedio</div>
+                        <div class="analysis-kpi-value">${averageQueue.toFixed(2)}</div>
+                        <span class="analysis-badge ${averageQueue >= 1.5 ? 'analysis-badge--warn' : 'analysis-badge--ok'}">${averageQueue >= 1.5 ? 'Con acumulación' : 'Controlada'}</span>
+                    </article>
+                </div>
+
+                <section class="analysis-block">
+                    <h3>Diagnóstico operativo</h3>
+                    <p>${diagnosis}</p>
+                </section>
+
+                <section class="analysis-block">
+                    <h3>Fundamento numérico</h3>
+                    <p>Llegadas promedio: ${lambda.toFixed(2)} aviones/min. Capacidad de pista: ${mu.toFixed(2)} aviones/min. Intensidad: ${trafficIntensity.toFixed(2)}. Throughput medido: ${throughput.toFixed(2)} aviones/min.</p>
+                </section>
+
+                <section class="analysis-block">
+                    <h3>Punto no viable con estos parámetros</h3>
+                    <p>${nonViablePoint}</p>
+                </section>
+
+                <section class="analysis-block">
+                    <h3>Plan de mejora sugerido</h3>
+                    <ul class="analysis-list">
+                        ${improvements.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </section>
+
+                <section class="analysis-block">
+                    <h3>Cierre de corrida</h3>
+                    <p>Finalizó en T=${results.clock} con ${results.landings} aterrizajes, ${results.takeoffs} despegues y ${pendingQueue} aviones pendientes en cola.</p>
+                </section>
+            </div>
         `;
     }
 
     function renderFinalAnalysis(results) {
         if (!currentConfig) {
-            analysisContent.innerHTML = '<p>No hay configuración disponible para analizar esta corrida.</p>';
+            analysisContent.innerHTML = `
+                <div class="analysis-report">
+                    <div class="analysis-block">
+                        <h3>No se pudo generar el reporte</h3>
+                        <p>No hay una configuración válida asociada a esta corrida para calcular el análisis.</p>
+                    </div>
+                </div>
+            `;
             return;
         }
 
@@ -418,6 +505,32 @@ document.addEventListener('DOMContentLoaded', () => {
     themeTabButtons.forEach(button => {
         button.addEventListener('click', () => {
             applyTheme(button.dataset.theme);
+        });
+
+        button.addEventListener('keydown', event => {
+            const currentIndex = themeTabButtons.indexOf(button);
+            if (currentIndex === -1) {
+                return;
+            }
+
+            if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                const nextIndex = (currentIndex + 1) % themeTabButtons.length;
+                themeTabButtons[nextIndex].focus();
+                applyTheme(themeTabButtons[nextIndex].dataset.theme);
+            }
+
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const prevIndex = (currentIndex - 1 + themeTabButtons.length) % themeTabButtons.length;
+                themeTabButtons[prevIndex].focus();
+                applyTheme(themeTabButtons[prevIndex].dataset.theme);
+            }
+
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                applyTheme(button.dataset.theme);
+            }
         });
     });
 

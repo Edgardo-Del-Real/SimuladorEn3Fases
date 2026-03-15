@@ -6,74 +6,96 @@
     <title>Simulador de Aeropuerto - 3 Fases</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Syne:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <main class="container">
-        <header>
+        <header class="hero-header">
+            <div class="hero-topline">Centro de Control</div>
             <h1>Simulación de Pista de Aeropuerto</h1>
-            <p>Modelo de Eventos Discretos (3 Fases de Tocher) en tiempo real</p>
+            <p>Motor de eventos discretos en 3 fases para observar colas, uso de pista y rendimiento operativo en tiempo real.</p>
+            <div class="hero-pills" aria-label="Características principales">
+                <span class="hero-pill">Modelo 3 Fases</span>
+                <span class="hero-pill">Ejecución en Tiempo Real</span>
+                <span class="hero-pill">Análisis Automático</span>
+            </div>
         </header>
 
-        <section class="controls-panel">
-            <div class="control-grid">
-                <label class="control-item" for="param-max-time">
-                    <span class="control-label">Tiempo total de simulación (min)</span>
-                    <input id="param-max-time" type="number" min="1" step="1" value="20">
-                </label>
-                <label class="control-item" for="param-arrival-interval">
-                    <span class="control-label">Cada cuánto llegan aviones (min)</span>
-                    <input id="param-arrival-interval" type="number" min="1" step="1" value="4">
-                </label>
-                <label class="control-item" for="param-runway-time">
-                    <span class="control-label">Uso de pista por maniobra (min)</span>
-                    <input id="param-runway-time" type="number" min="1" step="1" value="3">
-                </label>
-                <label class="control-item" for="param-realtime-ms">
-                    <span class="control-label">Velocidad en tiempo real (ms/evento)</span>
-                    <input id="param-realtime-ms" type="number" min="100" step="100" value="1000">
-                </label>
-                <label class="control-item" for="param-start-mode">
-                    <span class="control-label">Momento del primer arribo</span>
-                    <select id="param-start-mode">
-                        <option value="t0">Iniciar arribos en T=0</option>
-                        <option value="interval">Iniciar arribos en T=intervalo</option>
-                    </select>
-                </label>
-            </div>
-            <div class="theme-switcher">
-                <span class="theme-switcher-label">Estilo visual</span>
-                <div class="theme-tabs" aria-label="Seleccionar estilo visual">
-                    <button class="theme-tab" type="button" data-theme="elegante" aria-pressed="true">Elegante sobrio</button>
-                    <button class="theme-tab" type="button" data-theme="minimal" aria-pressed="false">Minimal premium</button>
-                    <button class="theme-tab" type="button" data-theme="tecnico" aria-pressed="false">Aeronáutico técnico</button>
+        <section class="top-deck">
+            <section class="controls-panel">
+                <div class="section-head">
+                    <h2>Configurar Escenario</h2>
+                    <p>Ajustá parámetros de operación y el estilo visual antes de iniciar la corrida.</p>
                 </div>
-            </div>
-            <div class="controls-actions">
-                <button id="btn-start" type="button">Iniciar</button>
-                <button id="btn-pause" type="button" disabled>Pausar</button>
-                <button id="btn-reset" type="button">Reiniciar</button>
-                <p id="sim-status" class="sim-status">Estado: Lista para iniciar</p>
-            </div>
-        </section>
+                <div class="control-grid">
+                    <label class="control-item" for="param-max-time">
+                        <span class="control-label">Tiempo total de simulación (min)</span>
+                        <input id="param-max-time" type="number" min="1" step="1" value="20">
+                    </label>
+                    <label class="control-item" for="param-arrival-interval">
+                        <span class="control-label">Cada cuánto llegan aviones (min)</span>
+                        <input id="param-arrival-interval" type="number" min="1" step="1" value="4">
+                    </label>
+                    <label class="control-item" for="param-runway-time">
+                        <span class="control-label">Uso de pista por maniobra (min)</span>
+                        <input id="param-runway-time" type="number" min="1" step="1" value="3">
+                    </label>
+                    <label class="control-item" for="param-realtime-ms">
+                        <span class="control-label">Velocidad en tiempo real (ms/evento)</span>
+                        <input id="param-realtime-ms" type="number" min="100" step="100" value="1000">
+                    </label>
+                    <label class="control-item" for="param-start-mode">
+                        <span class="control-label">Momento del primer arribo</span>
+                        <select id="param-start-mode">
+                            <option value="t0">Iniciar arribos en T=0</option>
+                            <option value="interval">Iniciar arribos en T=intervalo</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="theme-switcher">
+                    <span class="theme-switcher-label">Estilo visual</span>
+                    <div class="theme-tabs" aria-label="Seleccionar estilo visual">
+                        <button class="theme-tab" type="button" data-theme="elegante" aria-pressed="true">Elegante sobrio</button>
+                        <button class="theme-tab" type="button" data-theme="minimal" aria-pressed="false">Minimal premium</button>
+                        <button class="theme-tab" type="button" data-theme="tecnico" aria-pressed="false">Aeronáutico técnico</button>
+                    </div>
+                </div>
+                <div class="controls-actions">
+                    <button id="btn-start" type="button">Iniciar</button>
+                    <button id="btn-pause" type="button" disabled>Pausar</button>
+                    <button id="btn-reset" type="button">Reiniciar</button>
+                    <p id="sim-status" class="sim-status">Estado: Lista para iniciar</p>
+                </div>
+            </section>
 
-        <section class="results-dashboard">
-            <div class="card">
-                <h3>Aterrizajes Exitosos</h3>
-                <p id="res-landings" class="metric">0</p>
-            </div>
-            <div class="card">
-                <h3>Despegues Exitosos</h3>
-                <p id="res-takeoffs" class="metric">0</p>
-            </div>
-            <div class="card">
-                <h3>Longitud Promedio Cola</h3>
-                <p id="res-queue" class="metric">0.00</p>
-            </div>
+            <section class="results-panel">
+                <div class="section-head">
+                    <h2>Indicadores en Vivo</h2>
+                    <p>Lectura instantánea de resultados operativos durante toda la simulación.</p>
+                </div>
+                <div class="results-dashboard">
+                    <div class="card">
+                        <h3>Aterrizajes Exitosos</h3>
+                        <p id="res-landings" class="metric">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Despegues Exitosos</h3>
+                        <p id="res-takeoffs" class="metric">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>Longitud Promedio Cola</h3>
+                        <p id="res-queue" class="metric">0.00</p>
+                    </div>
+                </div>
+            </section>
         </section>
 
         <section class="table-container">
+            <div class="section-head section-head-compact">
+                <h2>Bitácora de Eventos</h2>
+                <p>Seguimiento cronológico del reloj, fases, colas y estado de pista.</p>
+            </div>
             <table id="simulation-table">
                 <thead>
                     <tr>
@@ -91,7 +113,10 @@
         </section>
 
         <section class="analysis-container" aria-live="polite">
-            <h2>Análisis de Resultados</h2>
+            <div class="section-head section-head-compact">
+                <h2>Análisis de Resultados</h2>
+                <p>Diagnóstico automático con fundamentos cuantitativos de la corrida.</p>
+            </div>
             <div id="analysis-content" class="analysis-content">
                 Ejecutá una simulación para ver el análisis automático.
             </div>
