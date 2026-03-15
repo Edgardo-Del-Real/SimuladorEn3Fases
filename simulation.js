@@ -8,6 +8,7 @@ class AirportSimulation {
         this.maxTime = config.maxTime;
         this.arrivalInterval = config.arrivalInterval;
         this.runwayUseTime = config.runwayUseTime;
+        this.startArrivalsAtZero = config.startArrivalsAtZero !== false;
 
         this.finished = false;
         this.clock = 0;
@@ -24,9 +25,10 @@ class AirportSimulation {
         this.totalQueueArea = 0;
 
         // Lista de Eventos Futuros (FEL) - [Tiempo, TipoEvento]
+        const firstArrivalTime = this.startArrivalsAtZero ? 0 : this.arrivalInterval;
         this.fel = [
-            { time: 0, type: 'ARRIBO_ATERRIZAJE' },
-            { time: 0, type: 'ARRIBO_DESPEGUE' }
+            { time: firstArrivalTime, type: 'ARRIBO_ATERRIZAJE' },
+            { time: firstArrivalTime, type: 'ARRIBO_DESPEGUE' }
         ];
 
         // Historial para la UI
@@ -165,10 +167,15 @@ class AirportSimulation {
 
 // --- CONEXIÓN CON LA INTERFAZ (UI Controller) ---
 document.addEventListener('DOMContentLoaded', () => {
+    const THEME_STORAGE_KEY = 'airport-sim-theme';
+    const availableThemes = ['elegante', 'minimal', 'tecnico'];
+
     const maxTimeInput = document.getElementById('param-max-time');
     const arrivalInput = document.getElementById('param-arrival-interval');
     const runwayInput = document.getElementById('param-runway-time');
     const realtimeInput = document.getElementById('param-realtime-ms');
+    const startModeInput = document.getElementById('param-start-mode');
+    const themeTabButtons = Array.from(document.querySelectorAll('.theme-tab'));
 
     const startButton = document.getElementById('btn-start');
     const pauseButton = document.getElementById('btn-pause');
@@ -195,8 +202,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.floor(n);
     }
 
-    function setStatus(text) {
+    function applyTheme(themeName) {
+        const safeTheme = availableThemes.includes(themeName) ? themeName : 'elegante';
+
+        document.body.setAttribute('data-theme', safeTheme);
+        themeTabButtons.forEach(button => {
+            const isActive = button.dataset.theme === safeTheme;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', String(isActive));
+        });
+        localStorage.setItem(THEME_STORAGE_KEY, safeTheme);
+    }
+
+    function setStatus(text, tone = 'ready') {
         statusLabel.textContent = `Estado: ${text}`;
+        statusLabel.setAttribute('data-tone', tone);
     }
 
     function stopTimer() {
@@ -243,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTable();
         renderDashboard({ landings: 0, takeoffs: 0, averageQueue: '0.00' });
         analysisContent.innerHTML = 'Ejecutá una simulación para ver el análisis automático.';
-        setStatus('Lista para iniciar');
+        setStatus('Lista para iniciar', 'ready');
         pauseButton.disabled = true;
         pauseButton.textContent = 'Pausar';
     }
@@ -316,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stopTimer();
             isRunning = false;
             updateButtons();
-            setStatus(`Finalizada en T=${results.clock}`);
+            setStatus(`Finalizada en T=${results.clock}`, 'done');
             renderFinalAnalysis(results);
         }
     }
@@ -330,7 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const config = {
             maxTime: toPositiveInt(maxTimeInput.value, 20),
             arrivalInterval: toPositiveInt(arrivalInput.value, 4),
-            runwayUseTime: toPositiveInt(runwayInput.value, 3)
+            runwayUseTime: toPositiveInt(runwayInput.value, 3),
+            startArrivalsAtZero: startModeInput.value === 't0'
         };
 
         currentConfig = config;
@@ -345,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isRunning = true;
         updateButtons();
-        setStatus('Ejecutando');
+        setStatus('Ejecutando', 'running');
         renderRunningAnalysis();
 
         runStep();
@@ -360,17 +381,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (sim.finished) {
-            setStatus('La simulación ya terminó');
+            setStatus('La simulación ya terminó', 'done');
             return;
         }
 
         if (isRunning) {
             stopTimer();
             isRunning = false;
-            setStatus('Pausada');
+            setStatus('Pausada', 'paused');
         } else {
             isRunning = true;
-            setStatus('Ejecutando');
+            setStatus('Ejecutando', 'running');
             startTimer();
         }
 
@@ -393,6 +414,15 @@ document.addEventListener('DOMContentLoaded', () => {
         stopTimer();
         startTimer();
     });
+
+    themeTabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            applyTheme(button.dataset.theme);
+        });
+    });
+
+    const initialTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'elegante';
+    applyTheme(initialTheme);
 
     resetUI();
 });

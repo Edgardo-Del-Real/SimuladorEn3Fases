@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Aeropuerto - 3 Fases</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,21 +19,36 @@
         <section class="controls-panel">
             <div class="control-grid">
                 <label class="control-item" for="param-max-time">
-                    Tiempo total de simulación (min)
+                    <span class="control-label">Tiempo total de simulación (min)</span>
                     <input id="param-max-time" type="number" min="1" step="1" value="20">
                 </label>
                 <label class="control-item" for="param-arrival-interval">
-                    Cada cuánto llegan aviones (min)
+                    <span class="control-label">Cada cuánto llegan aviones (min)</span>
                     <input id="param-arrival-interval" type="number" min="1" step="1" value="4">
                 </label>
                 <label class="control-item" for="param-runway-time">
-                    Uso de pista por maniobra (min)
+                    <span class="control-label">Uso de pista por maniobra (min)</span>
                     <input id="param-runway-time" type="number" min="1" step="1" value="3">
                 </label>
                 <label class="control-item" for="param-realtime-ms">
-                    Velocidad en tiempo real (ms/evento)
+                    <span class="control-label">Velocidad en tiempo real (ms/evento)</span>
                     <input id="param-realtime-ms" type="number" min="100" step="100" value="1000">
                 </label>
+                <label class="control-item" for="param-start-mode">
+                    <span class="control-label">Momento del primer arribo</span>
+                    <select id="param-start-mode">
+                        <option value="t0">Iniciar arribos en T=0</option>
+                        <option value="interval">Iniciar arribos en T=intervalo</option>
+                    </select>
+                </label>
+            </div>
+            <div class="theme-switcher">
+                <span class="theme-switcher-label">Estilo visual</span>
+                <div class="theme-tabs" aria-label="Seleccionar estilo visual">
+                    <button class="theme-tab" type="button" data-theme="elegante" aria-pressed="true">Elegante sobrio</button>
+                    <button class="theme-tab" type="button" data-theme="minimal" aria-pressed="false">Minimal premium</button>
+                    <button class="theme-tab" type="button" data-theme="tecnico" aria-pressed="false">Aeronáutico técnico</button>
+                </div>
             </div>
             <div class="controls-actions">
                 <button id="btn-start" type="button">Iniciar</button>
